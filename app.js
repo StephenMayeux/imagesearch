@@ -2,7 +2,7 @@ require('dotenv').config();
 var express = require('express');
 var mongoose = require('mongoose');
 var request = require('request');
-var imagesearch = require('node-google-image-search');
+var GoogleSearch = require('google-search');
 var path = require('path');
 var app = express();
 
@@ -19,9 +19,9 @@ var querySchema = new mongoose.Schema({
     termsearch: String,
     when: Date
 });
-var history = mongoose.model('History', querySchema);
 
-var GoogleSearch = require('google-search');
+// keep model names Uppercase
+var History = mongoose.model('History', querySchema);
 
 
 var googleSearch = new GoogleSearch({
@@ -29,44 +29,37 @@ var googleSearch = new GoogleSearch({
   cx: '000754867127125657108:bxeoqm_9f20'
 });
 
-app.get('/', function(req, res){
+app.get('/', function(req, res, next){
     res.send('New Project!!');
 });
 
 
-app.get('/:searchable', function(req, res){
+app.get('/:searchable', function(req, res, next){
 
     var item = req.params.searchable;
 
-    history.create({
+    var history = new History({
         termsearch: item,
         when: new Date()
     });
 
-    googleSearch.build(
-    {
-        q: item,
-        //start: 2,
-        num: 10
-    }, function(err, response){
-        if (err){
-            console.log(err);
-        }else{
-            //res.send(result);
-            var result = [];
-             var searchNum = response.queries.request[0].count
-             for(var i = 0; i < searchNum; i++){
-               var selection = response.items[i];
-               var newObj = {
-                        "title": selection.title,
-                        "snippet": selection.snippet,
-                        "imgUrl": selection.link,
-                };
-              result.push(newObj);
-             }
-             //res.send(response);
-             res.send(result);
-        }
+    history.save(function(err) {
+      if (err) return next(err);
+    });
+
+    googleSearch.build({
+      q: item,
+      num: 10
+    }, function(err, response) {
+      if (err) return next(err);
+      var results = response.items.map(function(image) {
+        return {
+          title: image.title,
+          snippet: image.snippet,
+          imgUrl: image.link
+        };
+      });
+       res.send(results);
     });
 });
 
