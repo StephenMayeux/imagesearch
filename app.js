@@ -2,7 +2,7 @@ require('dotenv').config();
 var express = require('express');
 var mongoose = require('mongoose');
 var request = require('request');
-//var imagesearch = require('node-google-image-search');
+var imagesearch = require('node-google-image-search');
 var path = require('path');
 var app = express();
 
@@ -13,7 +13,7 @@ app.use(express.static(__dirname + '/public'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-mongoose.connect('mongodb://localhost/image_search');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/image_search');
 
 var querySchema = new mongoose.Schema({
     termsearch: String,
@@ -71,6 +71,6 @@ app.get('/:searchable', function(req, res){
 });
 
 
-app.listen(3000, function(){
+app.listen(process.env.PORT || 3000, function(){
     console.log("Server running on port 3000");
 });
